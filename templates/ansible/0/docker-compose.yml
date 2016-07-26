@@ -3,6 +3,8 @@ ansible-runner:
   labels:
     io.rancher.container.start_once: 'true'
   net: host
+  links:
+  - ansible-agent
 
 ansible-agent:
   image: ansible/ansible:centos7
