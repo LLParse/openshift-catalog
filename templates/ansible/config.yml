@@ -1,0 +1,4 @@
+name: Ansible
+description: An orchestration engine
+version: 0.0.1
+category: Orchestration
