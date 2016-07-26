@@ -10,6 +10,7 @@ ansible-agent:
   image: llparse/ansible-agent:v0.0.1
   labels:
     io.rancher.scheduler.global: 'true'
+    io.rancher.container.dns: 'true'
   net: host
   volumes:
   - /root:/root
