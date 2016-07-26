@@ -9,4 +9,5 @@ ansible-agent:
   labels:
     io.rancher.scheduler.global: 'true'
   net: host
-  volumes: /root:/root
+  volumes:
+  - /root:/root
