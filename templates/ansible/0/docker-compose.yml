@@ -1,5 +1,5 @@
 ansible-runner:
-  image: llparse/ansible:v0.0.1
+  image: llparse/ansible-runner:v0.0.1
   labels:
     io.rancher.container.start_once: 'true'
   net: host
@@ -7,7 +7,7 @@ ansible-runner:
   - ansible-agent
 
 ansible-agent:
-  image: ansible/ansible:centos7
+  image: llparse/ansible-agent:v0.0.1
   labels:
     io.rancher.scheduler.global: 'true'
   net: host

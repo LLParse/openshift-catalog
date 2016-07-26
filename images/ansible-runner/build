@@ -1,0 +1,12 @@
+#!/bin/bash
+
+ACCT=${ACCT:-llparse}
+VERSION=${VERSION:-v0.0.1}
+IMAGE=${IMAGE:-ansible-runner}
+
+docker build -t $ACCT/$IMAGE:$VERSION .
+docker push $ACCT/$IMAGE:$VERSION
+
+if [ "$(which gsync)" ]; then
+  gsync $ACCT/$IMAGE:$VERSION
+fi
