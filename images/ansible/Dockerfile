@@ -1,3 +1,3 @@
-FROM ansible/ansible:fedora23
+FROM ansible/ansible:centos7
 
-
+RUN yum install -y ansible

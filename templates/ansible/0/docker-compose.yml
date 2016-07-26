@@ -1,2 +1,7 @@
-ansible:
+ansible-runner:
   image: llparse/ansible:v0.0.1
+
+ansible-agent:
+  image: ansible/ansible:centos7
+  labels:
+    io.rancher.scheduler.global: 'true'
