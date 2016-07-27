@@ -1,16 +1,18 @@
-ansible-runner:
-  image: llparse/ansible-runner:v0.0.1
-  labels:
-    io.rancher.container.start_once: 'true'
-  net: host
-  links:
-  - ansible-agent
-
 ansible-agent:
   image: llparse/ansible-agent:v0.0.1
   labels:
     io.rancher.scheduler.global: 'true'
     io.rancher.container.dns: 'true'
+    io.rancher.container.start_once: 'true'
   net: host
   volumes:
   - /root:/root
+
+ansible-runner:
+  image: llparse/ansible-runner:v0.0.1
+  labels:
+    io.rancher.container.dns: 'true'
+    io.rancher.container.start_once: 'true'
+  net: host
+  links:
+  - ansible-agent
