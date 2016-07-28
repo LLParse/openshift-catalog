@@ -13,6 +13,8 @@ ansible-agent:
 
 ansible-runner:
   image: llparse/ansible-runner:v0.0.1
+  entrypoint: /bin/bash
+  command: /run.sh
   labels:
     io.rancher.container.dns: 'true'
     io.rancher.container.start_once: 'true'
