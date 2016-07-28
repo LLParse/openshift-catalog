@@ -6,7 +6,7 @@ ansible-agent:
     io.rancher.container.dns: 'true'
     io.rancher.container.start_once: 'true'
   net: host
-  publish:
+  ports:
   - 33518:33518
   volumes:
   - /root:/root
