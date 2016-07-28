@@ -1,10 +1,13 @@
 ansible-agent:
   image: llparse/ansible-agent:v0.0.1
+  entrypoint: /usr/bin/auth-config
   labels:
     io.rancher.scheduler.global: 'true'
     io.rancher.container.dns: 'true'
     io.rancher.container.start_once: 'true'
   net: host
+  publish:
+  - 33518:33518
   volumes:
   - /root:/root
 
