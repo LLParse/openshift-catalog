@@ -10,6 +10,7 @@ openshift-origin:
   volumes:
   - /root:/root
   - /var/run/dbus:/var/run/dbus
+  - /sys/fs/cgroup:/sys/fs/cgroup
   - /var/run/docker.sock:/var/run/docker.sock
   - /var/lib/docker:/var/lib/docker
 
