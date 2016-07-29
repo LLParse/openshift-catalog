@@ -1,3 +1,14 @@
+openshift-origin:
+  image: llparse/openshift-origin:v0.0.1
+  labels:
+    io.rancher.scheduler.global: 'true'
+    io.rancher.container.dns: 'true'
+  net: host
+  volumes:
+  - /root:/root
+  - /var/run/docker.sock:/var/run/docker.sock
+  - /var/lib/docker:/var/lib/docker
+
 auth-agent:
   image: llparse/auth-agent:v0.0.1
   labels:
@@ -20,4 +31,5 @@ ansible-runner:
     io.rancher.scheduler.affinity:host_label: io.rancher.host.docker_version=1.10
   net: host
   links:
+  - openshift-origin
   - auth-agent
