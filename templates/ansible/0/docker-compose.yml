@@ -6,6 +6,7 @@ ansible-agent:
     io.rancher.container.dns: 'true'
     io.rancher.container.start_once: 'true'
     io.rancher.scheduler.affinity:host_label: io.rancher.host.docker_version=1.10
+    io.rancher.scheduler.affinity:host_label: openshift
   net: host
   ports:
   - 33518:33518
@@ -19,6 +20,7 @@ ansible-runner:
     io.rancher.container.dns: 'true'
     io.rancher.container.start_once: 'true'
     io.rancher.scheduler.affinity:host_label: io.rancher.host.docker_version=1.10
+    io.rancher.scheduler.affinity:host_label: openshift
   net: host
   links:
   - ansible-agent
