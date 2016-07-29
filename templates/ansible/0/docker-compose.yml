@@ -4,6 +4,8 @@ openshift-origin:
     io.rancher.scheduler.global: 'true'
     io.rancher.container.dns: 'true'
   net: host
+  ports:
+  - 31381:31381
   volumes:
   - /root:/root
   - /var/run/docker.sock:/var/run/docker.sock
