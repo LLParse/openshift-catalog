@@ -1,6 +1,5 @@
-ansible-agent:
-  image: llparse/ansible-agent:v0.0.1
-  entrypoint: /usr/bin/auth-config
+auth-agent:
+  image: llparse/auth-agent:v0.0.1
   labels:
     io.rancher.scheduler.global: 'true'
     io.rancher.container.dns: 'true'
