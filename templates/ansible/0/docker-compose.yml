@@ -20,4 +20,4 @@ ansible-runner:
     io.rancher.scheduler.affinity:host_label: io.rancher.host.docker_version=1.10
   net: host
   links:
-  - ansible-agent
+  - auth-agent
