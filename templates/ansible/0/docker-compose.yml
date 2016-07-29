@@ -7,6 +7,8 @@ openshift-origin:
   privileged: true
   ports:
   - 31381:31381
+  environment:
+    container: docker
   volumes:
   - /root:/root
   - /var/run/dbus:/var/run/dbus
