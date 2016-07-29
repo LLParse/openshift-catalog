@@ -8,6 +8,7 @@ openshift-origin:
   - 31381:31381
   volumes:
   - /root:/root
+  - /var/run/dbus:/var/run/dbus
   - /var/run/docker.sock:/var/run/docker.sock
   - /var/lib/docker:/var/lib/docker
 
