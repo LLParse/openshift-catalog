@@ -22,3 +22,9 @@ for host in $(curl -s ${META_URL}/hosts); do
     curl -s -X POST ${agent_ip}:${PORT}/shutdown
   fi  
 done
+
+# Loop through hosts and build Ansible hosts file
+ansible-playbook /openshift-ansible/playbooks/byo/config.yml
+
+# HODOR
+sleep 1000000
