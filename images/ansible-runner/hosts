@@ -1,0 +1,21 @@
+[OSEv3:children]
+masters
+nodes
+
+[OSEv3:vars]
+ansible_ssh_user=root
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+ansible_ssh_extra_args='-p 31381'
+ansible_scp_extra_args='-P 31381'
+ansible_sftp_extra_args='-P 31381'
+deployment_type=origin
+containerized=true
+
+[masters]
+james-10acre-1
+
+[nodes]
+james-10acre-1 openshift_node_labels="{'region': 'infra', 'zone': 'default'}"
+james-10acre-2 openshift_node_labels="{'region': 'primary', 'zone': 'default'}"
+james-10acre-3 openshift_node_labels="{'region': 'primary', 'zone': 'default'}"
+james-10acre-4 openshift_node_labels="{'region': 'primary', 'zone': 'default'}"
