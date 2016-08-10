@@ -4,6 +4,7 @@ openshift-origin:
   labels:
     io.rancher.scheduler.global: 'true'
     io.rancher.container.dns: 'true'
+    io.rancher.scheduler.affinity:host_label: io.rancher.host.docker_version=1.10
   net: host
   privileged: true
   ports:
