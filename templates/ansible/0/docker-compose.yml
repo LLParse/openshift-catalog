@@ -5,6 +5,7 @@ openshift-origin:
     io.rancher.scheduler.global: 'true'
     io.rancher.container.dns: 'true'
     io.rancher.scheduler.affinity:host_label: io.rancher.host.docker_version=1.10
+    io.rancher.container.pull_image: always
   net: host
   privileged: true
   ports:
@@ -25,6 +26,7 @@ auth-agent:
     io.rancher.container.dns: 'true'
     io.rancher.container.start_once: 'true'
     io.rancher.scheduler.affinity:host_label: io.rancher.host.docker_version=1.10
+    io.rancher.container.pull_image: always
   net: host
   ports:
   - 33518:33518
@@ -38,6 +40,7 @@ ansible-runner:
     io.rancher.container.dns: 'true'
     io.rancher.container.start_once: 'true'
     io.rancher.scheduler.affinity:host_label: io.rancher.host.docker_version=1.10
+    io.rancher.container.pull_image: always
   net: host
   links:
   - openshift-origin
