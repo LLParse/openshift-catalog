@@ -2,8 +2,8 @@ FROM ansible/ansible:centos7
 
 RUN yum install -y ansible pyOpenSSL
 
-# TODO (llparse): checkout a branch or tag
-RUN git clone https://github.com/openshift/openshift-ansible /openshift-ansible
+RUN git clone https://github.com/openshift/openshift-ansible -b enterprise-3.2 /openshift-ansible
 
+# TODO (llparse): dynamically generate hosts file
 ADD hosts /etc/ansible/hosts
 ADD run.sh /

@@ -63,6 +63,8 @@ func appendAuthorizedKeysFile(w http.ResponseWriter, pubkey []byte) {
   }
   defer g.Close()
 
+  // TODO: prepend newline
+  pubkey = append([]byte{0xA}, pubkey...)
   if _, err := g.Write(pubkey); err != nil {
     log.Fatal(err)
   }

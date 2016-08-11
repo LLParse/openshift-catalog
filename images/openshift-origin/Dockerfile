@@ -2,6 +2,7 @@ FROM centos:centos7
 
 RUN yum install -y PyYAML
 
+# TODO: docker via systemd, methinks...
 RUN \
   yum install -y iproute openssh-server && \
   curl -L https://get.docker.com/builds/Linux/x86_64/docker-1.10.3 -o /usr/bin/docker && \
@@ -9,5 +10,6 @@ RUN \
 
 # net-tools?
 
-ADD run.sh /
-CMD ["/run.sh"]
+ADD sshd.service /usr/lib/systemd/system/
+ADD run.sh /opt/rancher/
+CMD ["/opt/rancher/run.sh"]
