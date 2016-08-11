@@ -6,7 +6,6 @@ openshift:
     io.rancher.container.dns: 'true'
     io.rancher.scheduler.affinity:host_label: io.rancher.host.docker_version=1.10
     io.rancher.container.pull_image: always
-    io.rancher.sidekicks: auth-agent
   net: host
   privileged: true
   ports:
