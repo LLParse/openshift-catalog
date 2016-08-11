@@ -27,6 +27,6 @@ ansible:
     io.rancher.container.start_once: 'true'
     io.rancher.scheduler.affinity:host_label: io.rancher.host.docker_version=1.10
     io.rancher.container.pull_image: always
-  net: host
+  #net: host
   links:
   - openshift
