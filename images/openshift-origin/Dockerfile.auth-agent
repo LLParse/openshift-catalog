@@ -12,12 +12,13 @@ ENV GOPATH /go
 ENV PATH /go/bin:$PATH 
 WORKDIR /go
 
-ENV NAME auth-config
 
-RUN yum update && yum install -y git
+RUN yum -y update && yum -y install git
 RUN go get github.com/rancher/go-rancher-metadata
+
+ENV NAME auth-agent
 RUN mkdir -p /go/src/$NAME
 WORKDIR /go/src/$NAME
-ADD main.go .
+ADD auth-agent.go .
 
 RUN go build

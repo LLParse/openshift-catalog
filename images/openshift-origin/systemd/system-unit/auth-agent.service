@@ -1,0 +1,9 @@
+[Unit]
+Description=SSH public key authorization agent
+After=network.target sshd.service
+
+[Service]
+ExecStart=/usr/bin/auth-agent
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=on-failure

@@ -19,7 +19,7 @@ openshift:
 #  - /var/run/docker.sock:/var/run/docker.sock
 #  - /var/lib/docker:/var/lib/docker
 
-orchestrator:
+ansible:
   image: llparse/ansible-runner:v0.0.1
   command: /run.sh
   labels:

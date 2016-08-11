@@ -10,5 +10,6 @@ RUN \
 
 # net-tools?
 
-ADD auth-config /usr/bin/
-ADD sshd.service auth-agent.service /usr/lib/systemd/system/
+ADD auth-agent /usr/bin/
+ADD systemd/system-unit/* /usr/lib/systemd/system/
+ADD systemd/system-preset/* /usr/lib/systemd/system-preset/
