@@ -1,5 +1,6 @@
 openshift-origin:
   image: llparse/openshift-origin:v0.0.1
+  command: /usr/sbin/init
   labels:
     io.rancher.scheduler.global: 'true'
     io.rancher.container.dns: 'true'
