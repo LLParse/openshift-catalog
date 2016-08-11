@@ -41,5 +41,4 @@ orchestrator:
     io.rancher.container.pull_image: always
   net: host
   links:
-  - openshift-origin
-  - auth-agent
+  - openshift
