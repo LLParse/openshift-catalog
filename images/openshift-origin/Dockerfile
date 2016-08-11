@@ -11,5 +11,3 @@ RUN \
 # net-tools?
 
 ADD sshd.service /usr/lib/systemd/system/
-ADD run.sh /opt/rancher/
-CMD ["/opt/rancher/run.sh"]

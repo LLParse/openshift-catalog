@@ -1,0 +1,15 @@
+#!/bin/bash -e
+
+BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+for dir in $(ls $BASEDIR); do
+  if [ ! -d $dir ]; then
+    continue
+  fi
+  
+  echo Building $dir
+  cd $dir
+    # TODO: flag to parallelize
+    ./build
+  cd -
+done

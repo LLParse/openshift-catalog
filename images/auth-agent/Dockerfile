@@ -1,4 +1,4 @@
-FROM ansible/ansible:centos7
+FROM centos:centos7
 
 ADD auth-config /usr/bin
 

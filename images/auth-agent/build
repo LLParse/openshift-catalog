@@ -13,7 +13,3 @@ docker build -t $ACCT/$IMAGE:$VERSION .
 docker push $ACCT/$IMAGE:$VERSION
 
 rm auth-config
-
-if [ "$(which gsync)" ]; then
-  gsync $ACCT/$IMAGE:$VERSION
-fi

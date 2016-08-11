@@ -6,7 +6,3 @@ IMAGE=${IMAGE:-openshift-origin}
 
 docker build -t $ACCT/$IMAGE:$VERSION .
 docker push $ACCT/$IMAGE:$VERSION
-
-if [ "$(which gsync)" ]; then
-  gsync $ACCT/$IMAGE:$VERSION
-fi
