@@ -9,6 +9,9 @@ import (
   "os"
 )
 
+// TODO: for SystemD machines, need to configure /etc/ssh/sshd_config to set `PermitRootLogin yes` then `systemctl restart sshd`
+// we can solve this by containerizing the SSH stuff and exposing the host as is necessary
+
 const (
   authorizedKeysFile = "/root/.ssh/authorized_keys"
 )
@@ -20,6 +23,7 @@ func main() {
 }
 
 func authorizePublicKey(w http.ResponseWriter, r *http.Request) {
+  // TODO: verify folder/file exists or create it
   if r.Method == "POST" {
     pubkey, err := ioutil.ReadAll(r.Body)
     if err != nil {

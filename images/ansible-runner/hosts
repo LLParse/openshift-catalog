@@ -3,8 +3,13 @@ masters
 nodes
 
 [OSEv3:vars]
+
+# OpenShift makes assumption that the user is root
 ansible_user=root
-ansible_port=31381
+
+# TODO (llparse) route commands into container instead of taking over host
+#ansible_port=31381
+
 ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 deployment_type=origin
 containerized=true

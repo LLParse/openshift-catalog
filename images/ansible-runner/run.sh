@@ -13,8 +13,11 @@ probe_loop() {
   done
 }
 
-rm -f ~/.ssh/id_rsa ~./ssh/id_rsa.pub
-ssh-keygen -f ~/.ssh/id_rsa -N ''
+if [ ! -f ~/.ssh/.generated ]; then
+  rm -f ~/.ssh/id_rsa ~./ssh/id_rsa.pub
+  ssh-keygen -f ~/.ssh/id_rsa -N ''
+  touch ~/.ssh/.generated
+fi
 
 # Loop through hosts, wait for services and authorize our public key
 for host in $(curl -s ${META_URL}/hosts); do
@@ -27,8 +30,8 @@ for host in $(curl -s ${META_URL}/hosts); do
     probe_loop $agent_ip $AUTH_PORT
     probe_loop $agent_ip $SSHD_PORT
 
-    curl -s -X POST -d "$(cat /root/.ssh/id_rsa.pub)" ${agent_ip}:${AUTH_PORT}/authorized_keys
-    curl -s -X POST ${agent_ip}:${AUTH_PORT}/shutdown
+    curl -X POST -d "$(cat /root/.ssh/id_rsa.pub)" ${agent_ip}:${AUTH_PORT}/authorized_keys
+    curl -X POST ${agent_ip}:${AUTH_PORT}/shutdown
   fi  
 done
 

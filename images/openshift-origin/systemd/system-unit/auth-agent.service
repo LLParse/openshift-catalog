@@ -6,4 +6,6 @@ After=network.target sshd.service
 ExecStart=/usr/bin/auth-agent
 ExecReload=/bin/kill -HUP $MAINPID
 KillMode=process
-Restart=on-failure
+# TODO (llparse) Turn off restart-always once we fix auth-agent
+Restart=always
+#Restart=on-failure
