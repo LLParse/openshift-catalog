@@ -20,6 +20,9 @@ common() {
 
 bootstrap_master() {
   common
+  CREATE_EXAMPLES=${CREATE_EXAMPLES:-true}
+  CREATE_ROUTER=${CREATE_ROUTER:-true}
+  CREATE_REGISTRY=${CREATE_REGISTRY:-true}
 
   # Generate keys and default config
   openshift start master \
@@ -65,10 +68,29 @@ configure() {
   # wait for server to open socket
   giddyup probe tcp://${HOST_IP}:8443 --loop --min 1s --max 16s --backoff 2
 
-  create_examples
   configure_admin
-  create_router
-  create_registry
+  if [ "$CREATE_EXAMPLES" == "true" ]; then
+    create_examples
+  fi
+  if [ "$CREATE_ROUTER" == "true" ]; then
+    create_router
+  fi
+  if [ "$CREATE_REGISTRY" == "true" ]; then
+    create_registry
+  fi
+}
+
+configure_admin() {
+  # Give admin user the admin role for initial projects
+  projects=(default openshift openshift-infra)
+  for project in ${projects[@]}; do
+    oc_gate get project $project
+    oc policy add-role-to-user admin admin -n $project
+  done
+
+  #oadm policy add-role-to-user system:image-builder admin
+  #oadm policy add-role-to-user system:image-puller admin
+  #oadm policy add-role-to-user system:deployer admin
 }
 
 create_examples() {
@@ -81,19 +103,6 @@ create_examples() {
       oc create -f $f -n openshift
     done
   done
-}
-
-configure_admin() {
-  # Give admin user the admin role for initial projects
-  projects=(default openshift openshift-infra)
-  for project in ${projects[@]}; do
-    oc_gate get project $project
-    oc policy add-role-to-user admin admin -n $project
-  done
-
-  #oadm add-role-to-user system:image-builder admin
-  #oadm add-role-to-user system:image-puller admin
-  #oadm add-role-to-user system:deployer admin
 }
 
 create_router() {
