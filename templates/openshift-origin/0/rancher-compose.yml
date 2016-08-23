@@ -16,6 +16,11 @@
     description: Install a secure Docker registry in the default project
     type: boolean
     default: true
+  - variable: RANCHER_DEBUG
+    label: Debug Mode
+    description: Enable verbose logging and other debugging features
+    type: boolean
+    default: true
 etcd:
     retain_ip: true
     scale_policy:

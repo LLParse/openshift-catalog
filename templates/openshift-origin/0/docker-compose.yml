@@ -1,26 +1,28 @@
 etcd:
-    image: llparse/etcd:v2.3.7-7
-    labels:
-        io.rancher.scheduler.affinity:host_label_soft: etcd=true
-        io.rancher.scheduler.affinity:host_label_soft_ne: master=true
-        io.rancher.scheduler.affinity:container_label_ne: io.rancher.stack_service.name=$${stack_name}/$${service_name}
-        io.rancher.sidekicks: backup
-    environment:
-        RANCHER_DEBUG: 'true'
-    volumes:
-    - etcd:/pdata
+  image: llparse/etcd:v2.3.7-7
+  labels:
+    io.rancher.scheduler.affinity:host_label_soft: etcd=true
+    io.rancher.scheduler.affinity:host_label_soft_ne: master=true
+    io.rancher.scheduler.affinity:container_label_ne: io.rancher.stack_service.name=$${stack_name}/$${service_name}
+    io.rancher.sidekicks: backup
+  environment:
+    RANCHER_DEBUG: '${RANCHER_DEBUG}'
+  volumes:
+  # temporarily ephemeral
+  - /pdata
+  #- etcd:/pdata
 
 backup:
-    image: llparse/etcd:v2.3.7-7
-    command: rolling_backup
-    environment:
-        BACKUP_PERIOD: 5m
-        BACKUP_RETENTION: 1h
-    net: container:etcd
-    volumes:
-    - /var/etcd/backups:/data-backup
-    volumes_from:
-    - etcd
+  image: llparse/etcd:v2.3.7-7
+  command: rolling_backup
+  environment:
+    BACKUP_PERIOD: 5m
+    BACKUP_RETENTION: 1h
+  net: container:etcd
+  volumes:
+  - /var/etcd/backups:/data-backup
+  volumes_from:
+  - etcd
 
 origin-master:
   image: llparse/origin:v1.2.1
@@ -34,6 +36,7 @@ origin-master:
     io.rancher.scheduler.affinity:host_label_ne: etcd=true
     io.rancher.scheduler.affinity:host_label_soft: master=true
   environment:
+    RANCHER_DEBUG: '${RANCHER_DEBUG}'
     KUBECONFIG: /etc/origin/master/admin.kubeconfig
     CREATE_EXAMPLES: '${CREATE_EXAMPLES}'
     CREATE_ROUTER: '${CREATE_ROUTER}'
@@ -47,7 +50,7 @@ origin-master:
   privileged: true
   volumes:
   - /var/run/docker.sock:/var/run/docker.sock
-  - /etc/origin:/etc/origin
+  #- /etc/origin:/etc/origin
   - /var/lib/origin:/var/lib/origin
   - /etc/docker/certs.d:/etc/docker/certs.d
 
@@ -55,23 +58,28 @@ origin-node:
   image: llparse/origin:v1.2.1
   command: bootstrap_node
   labels:
+    io.rancher.container.agent.role: environment
+    io.rancher.container.create_agent: 'true'
     io.rancher.container.dns: 'true'
     io.rancher.container.pull_image: always
     io.rancher.container.start_once: 'true'
     io.rancher.scheduler.affinity:host_label_ne: etcd=true,master=true
     io.rancher.scheduler.global: 'true'
+  environment:
+    RANCHER_DEBUG: '${RANCHER_DEBUG}'
   expose:
   - 10250:10250/tcp
   links:
   - origin-master
   net: host
+  pid: host
   privileged: true
   volumes:
   # necessary for configuring secure docker registry
   - /etc/docker/certs.d:/etc/docker/certs.d
   - /:/rootfs:ro
   - /dev:/dev
-  - /etc/origin:/etc/origin
+  #- /etc/origin:/etc/origin
   - /lib/modules:/lib/modules
   - /run:/run
   - /sys:/sys:ro
@@ -79,11 +87,10 @@ origin-node:
   - /var/lib/docker:/var/lib/docker
   - /var/lib/origin:/var/lib/origin
   - /var/log:/var/log
-  #- /etc/localtime:/etc/localtime:ro
   #- /etc/machine-id:/etc/machine-id:ro
+  - /etc/localtime:/etc/localtime:ro
   #- /etc/origin/node:/etc/origin/node
   #- /etc/origin/openvswitch:/etc/openvswitch
   #- /etc/origin/sdn:/etc/openshift-sdn
   #- /etc/systemd/system:/host-etc/systemd/system
   #- /usr/bin/docker-current:/usr/bin/docker-current:ro
-  #- /var/lib/origin:/var/lib/origin:rslave
