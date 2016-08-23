@@ -10,6 +10,10 @@ oc_gate() {
 }
 
 common() {
+  CREATE_EXAMPLES=${CREATE_EXAMPLES:-true}
+  CREATE_ROUTER=${CREATE_ROUTER:-true}
+  CREATE_REGISTRY=${CREATE_REGISTRY:-true}
+
   META_URL=http://rancher-metadata.rancher.internal/2015-12-19
   HOST_IP=$(curl -s ${META_URL}/self/host/agent_ip)
   # sometimes returns empty??
@@ -32,10 +36,12 @@ bootstrap_master() {
 
   # Generate keys and default config
   openshift start master \
+    --cors-allowed-origins=localhost,127.0.0.1,${HOST_IP},${HOST_NAME},origin-master \
+    --dns=tcp://0.0.0.0:53 \
     --etcd=http://etcd.rancher.internal:2379 \
+    --listen=https://0.0.0.0:8443 \
     --master=https://${HOST_IP}:8443 \
     --public-master=https://${HOST_IP}:8443 \
-    --cors-allowed-origins=localhost,127.0.0.1,${HOST_IP},${HOST_NAME},origin-master \
     --write-config=${MASTER_CONFIG}
 
   UUID=$(curl -s ${META_URL}/services/origin-master/uuid)
@@ -43,10 +49,12 @@ bootstrap_master() {
   PROJECT_ID=$(echo $SERVICE_DATA | jq -r '.data[0].accountId')
   SERVICE_ID=$(echo $SERVICE_DATA | jq -r '.data[0].id')
   SERVICE_DATA=$(curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY "${CATTLE_URL}/projects/$PROJECT_ID/services/$SERVICE_ID")
-  SERVICE_DATA=$(echo $SERVICE_DATA | jq -r ".metadata |= .+ {\"ca.crt\":\"$(cat $CA_CERT | base64)\"}")
-  SERVICE_DATA=$(echo $SERVICE_DATA | jq -r ".metadata |= .+ {\"ca.key\":\"$(cat $CA_KEY | base64)\"}")
-  SERVICE_DATA=$(echo $SERVICE_DATA | jq -r ".metadata |= .+ {\"ca.serial\":\"$(cat $CA_SERIAL | base64)\"}")
-  SERVICE_DATA=$(echo $SERVICE_DATA | jq -r ".metadata |= .+ {\"admin.kubeconfig\":\"$(cat $ADMIN_CFG | base64)\"}")
+  #SERVICE_DATA=$(echo $SERVICE_DATA | jq -r ".metadata |= .+ {\"ca.crt\":\"$(cat $CA_CERT | base64)\"}")
+  #SERVICE_DATA=$(echo $SERVICE_DATA | jq -r ".metadata |= .+ {\"ca.key\":\"$(cat $CA_KEY | base64)\"}")
+  #SERVICE_DATA=$(echo $SERVICE_DATA | jq -r ".metadata |= .+ {\"ca.serial\":\"$(cat $CA_SERIAL | base64)\"}")
+  #SERVICE_DATA=$(echo $SERVICE_DATA | jq -r ".metadata |= .+ {\"admin.kubeconfig\":\"$(cat $ADMIN_CFG | base64)\"}")
+
+  SERVICE_DATA=$(echo $SERVICE_DATA | jq -r ".metadata |= .+ {\"all.the.data\":\"$(tar czf - master | base64)\"}")
 
   curl -s -X PUT \
     -u "${CATTLE_ACCESS_KEY}:${CATTLE_SECRET_KEY}" \
@@ -55,7 +63,7 @@ bootstrap_master() {
     -d "${SERVICE_DATA}" \
     "${CATTLE_URL}/projects/$PROJECT_ID/services/$SERVICE_ID"
 
-  configure &
+  configure_master &
 
   # Run master
   openshift start master \
@@ -65,19 +73,36 @@ bootstrap_master() {
 
 bootstrap_node() {
   common
+
+  # Sometimes node starts before master metadata is there
   MASTER_IP=$(curl -s rancher-metadata/latest/services/origin-master/containers/0/primary_ip)
+  while [ "$MASTER_IP" == "" ]; do
+    sleep 1
+    MASTER_IP=$(curl -s rancher-metadata/latest/services/origin-master/containers/0/primary_ip)
+  done
 
   mkdir -p ${MASTER_CONFIG}
   UUID=$(curl -s ${META_URL}/services/origin-master/uuid)
   SERVICE_DATA=$(curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY "${CATTLE_URL}/services?uuid=$UUID")
-  echo $SERVICE_DATA | jq -r '.data[0].metadata."ca.crt"' | base64 -d > $CA_CERT
-  echo $SERVICE_DATA | jq -r '.data[0].metadata."ca.key"' | base64 -d > $CA_KEY
-  echo $SERVICE_DATA | jq -r '.data[0].metadata."ca.serial"' | base64 -d > $CA_SERIAL
-  echo $SERVICE_DATA | jq -r '.data[0].metadata."admin.kubeconfig"' | base64 -d > $ADMIN_CFG
-  # FIXME maybe we need more config?
+
+  # TODO gate until metadata available
+  if [ ! -f $CA_CERT ]; then
+    #echo $SERVICE_DATA | jq -r '.data[0].metadata."ca.crt"' | base64 -d > $CA_CERT
+    #echo $SERVICE_DATA | jq -r '.data[0].metadata."ca.key"' | base64 -d > $CA_KEY
+    #echo $SERVICE_DATA | jq -r '.data[0].metadata."ca.serial"' | base64 -d > $CA_SERIAL
+    #echo $SERVICE_DATA | jq -r '.data[0].metadata."admin.kubeconfig"' | base64 -d > $ADMIN_CFG
+    echo $SERVICE_DATA | jq -r '.data[0].metadata."all.the.data"' | base64 -d | tar xz
+
+    # FIXME maybe we need more config?
+  fi
+
+  if [ "$CREATE_REGISTRY" == "true" ]; then
+    configure_docker
+  fi
 
   # Generate keys and default config
   oadm create-node-config \
+    --dns-ip=${MASTER_IP} \
     --node-client-certificate-authority=${CA_CERT} \
     --certificate-authority=${CA_CERT} \
     --signer-cert=${CA_CERT} \
@@ -85,7 +110,7 @@ bootstrap_node() {
     --signer-serial=${CA_SERIAL} \
     --node-dir=/etc/origin/node \
     --node=${HOST_NAME} \
-    --hostnames=${HOST_IP} \
+    --hostnames=${HOST_IP},${HOST_NAME} \
     --master=https://${MASTER_IP}:8443 \
     --config=/etc/origin/node
 
@@ -94,11 +119,7 @@ bootstrap_node() {
     --loglevel=2
 }
 
-configure() {
-  CREATE_EXAMPLES=${CREATE_EXAMPLES:-true}
-  CREATE_ROUTER=${CREATE_ROUTER:-true}
-  CREATE_REGISTRY=${CREATE_REGISTRY:-true}
-
+configure_master() {
   # wait for server to open socket
   giddyup probe tcp://${HOST_IP}:8443 --loop --min 1s --max 16s --backoff 2
 
@@ -111,6 +132,7 @@ configure() {
   fi
   if [ "$CREATE_REGISTRY" == "true" ]; then
     create_registry
+    configure_docker
   fi
 }
 
@@ -149,11 +171,7 @@ create_registry() {
     --service-account=registry
     #--mount-host=/var/lib/registry
 
-  REGISTRY_IP=$(oc get svc/docker-registry -o jsonpath='{.spec.clusterIP}')
-  while [ "$?" != "0" ]; do
-    sleep 1
-    REGISTRY_IP=$(oc get svc/docker-registry -o jsonpath='{.spec.clusterIP}')
-  done
+  REGISTRY_IP=$(get_registry_addr)
   giddyup probe tcp://${REGISTRY_IP}:5000 --loop --min 1s --max 16s --backoff 2
 
   oadm ca create-server-cert \
@@ -190,8 +208,19 @@ create_registry() {
     "name":"registry",
     "readinessProbe":  {"httpGet": {"scheme":"HTTPS"}}
   }]}}}}'
+}
 
-  destdir_addr=${DOCKER_CERTS}/${REGISTRY_IP}:5000
+get_registry_addr() {
+  addr=$(oc get svc/docker-registry -o jsonpath='{.spec.clusterIP}')
+  while [ "$?" != "0" ]; do
+    sleep 1
+    addr=$(oc get svc/docker-registry -o jsonpath='{.spec.clusterIP}')
+  done
+  echo $addr
+}
+
+configure_docker() {
+  destdir_addr=${DOCKER_CERTS}/$(get_registry_addr):5000
   destdir_name=${DOCKER_CERTS}/docker-registry.default.svc.cluster.local:5000
 
   mkdir -p $destdir_addr $destdir_name

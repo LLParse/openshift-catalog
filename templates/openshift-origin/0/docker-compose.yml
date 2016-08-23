@@ -51,9 +51,9 @@ origin-master:
   privileged: true
   volumes:
   - /var/run/docker.sock:/var/run/docker.sock
-  #- /etc/origin:/etc/origin
-  - /var/lib/origin:/var/lib/origin
   - /etc/docker/certs.d:/etc/docker/certs.d
+  #- /etc/origin:/etc/origin
+  #- /var/lib/origin:/var/lib/origin
 
 origin-node:
   image: llparse/origin:v1.2.1
@@ -78,9 +78,10 @@ origin-node:
   volumes:
   # necessary for configuring secure docker registry
   - /etc/docker/certs.d:/etc/docker/certs.d
+  # volumes only seem to work with a host bind-mount
+  - /etc/origin:/etc/origin
   - /:/rootfs:ro
   - /dev:/dev
-  #- /etc/origin:/etc/origin
   - /lib/modules:/lib/modules
   - /run:/run
   - /sys:/sys:ro
