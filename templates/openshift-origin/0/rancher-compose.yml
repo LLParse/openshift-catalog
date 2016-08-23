@@ -48,10 +48,10 @@ origin-master:
     unhealthy_threshold: 2
     interval: 5000
     response_timeout: 3000
-#origin-node:
-#  health_check:
- #   port: 10250
-#    healthy_threshold: 1
-#    unhealthy_threshold: 2
-#    interval: 5000
-#    response_timeout: 3000
+origin-node:
+  health_check:
+    port: 10250
+    healthy_threshold: 1
+    unhealthy_threshold: 2
+    interval: 5000
+    response_timeout: 3000

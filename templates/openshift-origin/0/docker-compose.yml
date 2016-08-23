@@ -28,8 +28,8 @@ origin-master:
   image: llparse/origin:v1.2.1
   command: bootstrap_master
   labels:
-    io.rancher.container.agent.role: environment
-    io.rancher.container.create_agent: 'true'
+    #io.rancher.container.agent.role: environment
+    #io.rancher.container.create_agent: 'true'
     io.rancher.container.dns: 'true'
     io.rancher.container.pull_image: always
     io.rancher.container.start_once: 'true'
@@ -50,7 +50,7 @@ origin-master:
   privileged: true
   volumes:
   - /var/run/docker.sock:/var/run/docker.sock
-  #- /etc/origin:/etc/origin
+  - /etc/origin:/etc/origin
   - /var/lib/origin:/var/lib/origin
   - /etc/docker/certs.d:/etc/docker/certs.d
 
@@ -58,8 +58,8 @@ origin-node:
   image: llparse/origin:v1.2.1
   command: bootstrap_node
   labels:
-    io.rancher.container.agent.role: environment
-    io.rancher.container.create_agent: 'true'
+    #io.rancher.container.agent.role: environment
+    #io.rancher.container.create_agent: 'true'
     io.rancher.container.dns: 'true'
     io.rancher.container.pull_image: always
     io.rancher.container.start_once: 'true'
@@ -79,7 +79,7 @@ origin-node:
   - /etc/docker/certs.d:/etc/docker/certs.d
   - /:/rootfs:ro
   - /dev:/dev
-  #- /etc/origin:/etc/origin
+  - /etc/origin:/etc/origin
   - /lib/modules:/lib/modules
   - /run:/run
   - /sys:/sys:ro
