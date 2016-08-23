@@ -28,8 +28,8 @@ origin-master:
   image: llparse/origin:v1.2.1
   command: bootstrap_master
   labels:
-    #io.rancher.container.agent.role: environment
-    #io.rancher.container.create_agent: 'true'
+    io.rancher.container.agent.role: environment
+    io.rancher.container.create_agent: 'true'
     io.rancher.container.dns: 'true'
     io.rancher.container.pull_image: always
     io.rancher.container.start_once: 'true'
@@ -43,7 +43,8 @@ origin-master:
     CREATE_REGISTRY: '${CREATE_REGISTRY}'
   expose:
   - 8443:8443/tcp
-  - 53:53/tcp
+  - 8053:8053/tcp
+  - 8053:8053/udp
   links:
   - etcd
   net: host
@@ -58,8 +59,8 @@ origin-node:
   image: llparse/origin:v1.2.1
   command: bootstrap_node
   labels:
-    #io.rancher.container.agent.role: environment
-    #io.rancher.container.create_agent: 'true'
+    io.rancher.container.agent.role: environment
+    io.rancher.container.create_agent: 'true'
     io.rancher.container.dns: 'true'
     io.rancher.container.pull_image: always
     io.rancher.container.start_once: 'true'
