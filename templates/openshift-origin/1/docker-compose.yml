@@ -28,8 +28,8 @@ origin-master:
   image: llparse/origin:v1.2.1
   command: bootstrap_master
   labels:
-    #io.rancher.container.agent.role: environment
-    #io.rancher.container.create_agent: 'true'
+    io.rancher.container.agent.role: environment
+    io.rancher.container.create_agent: 'true'
     io.rancher.container.dns: 'true'
     io.rancher.container.pull_image: always
     io.rancher.container.start_once: 'true'
@@ -58,8 +58,8 @@ origin-node:
   image: llparse/origin:v1.2.1
   command: bootstrap_node
   labels:
-    #io.rancher.container.agent.role: environment
-    #io.rancher.container.create_agent: 'true'
+    io.rancher.container.agent.role: environment
+    io.rancher.container.create_agent: 'true'
     io.rancher.container.dns: 'true'
     io.rancher.container.pull_image: always
     io.rancher.container.start_once: 'true'
