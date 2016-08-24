@@ -9,20 +9,7 @@ etcd:
     EMBEDDED_BACKUPS: 'false'
     RANCHER_DEBUG: '${RANCHER_DEBUG}'
   volumes:
-  - etcd:/pdata
-
-backup:
-  image: llparse/etcd:v2.3.7-7
-  command: rolling_backup
-  environment:
-    BACKUP_PERIOD: 15m
-    BACKUP_RETENTION: 1h
-    RANCHER_DEBUG: '${RANCHER_DEBUG}'
-  net: container:etcd
-  volumes:
-  - /var/etcd/backups:/data-backup
-  volumes_from:
-  - etcd
+  - /pdata
 
 origin-master:
   image: llparse/origin:v1.2.1
@@ -43,8 +30,6 @@ origin-master:
     CREATE_REGISTRY: '${CREATE_REGISTRY}'
   expose:
   - 8443:8443/tcp
-  - 8053:8053/tcp
-  - 8053:8053/udp
   links:
   - etcd
   net: host
@@ -87,10 +72,7 @@ origin-node:
   - /var/lib/docker:/var/lib/docker
   - /var/lib/origin:/var/lib/origin
   - /var/log:/var/log
-  #- /etc/machine-id:/etc/machine-id:ro
   - /etc/localtime:/etc/localtime:ro
-  #- /etc/origin/node:/etc/origin/node
+  # TODO (llparse) overlay network
   #- /etc/origin/openvswitch:/etc/openvswitch
   #- /etc/origin/sdn:/etc/openshift-sdn
-  #- /etc/systemd/system:/host-etc/systemd/system
-  #- /usr/bin/docker-current:/usr/bin/docker-current:ro

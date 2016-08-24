@@ -1,0 +1,57 @@
+.catalog:
+  version: 0.0.1
+  questions:
+  - variable: CREATE_EXAMPLES
+    label: Install Examples
+    description: Install the provided example templates and imagestreams
+    type: boolean
+    default: true
+  - variable: CREATE_ROUTER
+    label: Install HAProxy Router
+    description: Install a router in the default project
+    type: boolean
+    default: true
+  - variable: CREATE_REGISTRY
+    label: Install Secure Registry
+    description: Install a secure Docker registry in the default project
+    type: boolean
+    default: true
+  - variable: RANCHER_DEBUG
+    label: Debug Mode
+    description: Enable verbose logging and other debugging features
+    type: boolean
+    default: true
+etcd:
+    retain_ip: true
+    scale_policy:
+        increment: 1
+        max: 3
+        min: 1
+    metadata:
+        scale_policy:
+            min: 1
+    health_check:
+        port: 2378
+        request_line: GET /health HTTP/1.0
+        interval: 5000
+        response_timeout: 3000
+        unhealthy_threshold: 3
+        healthy_threshold: 2
+        recreate_on_quorum_strategy_config:
+            quorum: 2
+        strategy: recreateOnQuorum
+origin-master:
+  scale: 1
+  health_check:
+    port: 8443
+    healthy_threshold: 1
+    unhealthy_threshold: 2
+    interval: 5000
+    response_timeout: 3000
+origin-node:
+  health_check:
+    port: 10250
+    healthy_threshold: 1
+    unhealthy_threshold: 2
+    interval: 5000
+    response_timeout: 3000
