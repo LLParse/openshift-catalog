@@ -9,15 +9,13 @@ etcd:
     EMBEDDED_BACKUPS: 'false'
     RANCHER_DEBUG: '${RANCHER_DEBUG}'
   volumes:
-  # temporarily ephemeral
-  - /pdata
-  #- etcd:/pdata
+  - etcd:/pdata
 
 backup:
   image: llparse/etcd:v2.3.7-7
   command: rolling_backup
   environment:
-    BACKUP_PERIOD: 5m
+    BACKUP_PERIOD: 15m
     BACKUP_RETENTION: 1h
     RANCHER_DEBUG: '${RANCHER_DEBUG}'
   net: container:etcd
@@ -54,8 +52,6 @@ origin-master:
   volumes:
   - /var/run/docker.sock:/var/run/docker.sock
   - /etc/docker/certs.d:/etc/docker/certs.d
-  #- /etc/origin:/etc/origin
-  #- /var/lib/origin:/var/lib/origin
 
 origin-node:
   image: llparse/origin:v1.2.1
@@ -82,7 +78,6 @@ origin-node:
   - /etc/docker/certs.d:/etc/docker/certs.d
   # volumes only seem to work with a host bind-mount
   - /openshift.local.volumes:/openshift.local.volumes
-  #- /etc/origin:/etc/origin
   - /:/rootfs:ro
   - /dev:/dev
   - /lib/modules:/lib/modules
