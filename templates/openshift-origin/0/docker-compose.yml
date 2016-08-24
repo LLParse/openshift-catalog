@@ -6,6 +6,7 @@ etcd:
     io.rancher.scheduler.affinity:container_label_ne: io.rancher.stack_service.name=$${stack_name}/$${service_name}
     io.rancher.sidekicks: backup
   environment:
+    EMBEDDED_BACKUPS: 'false'
     RANCHER_DEBUG: '${RANCHER_DEBUG}'
   volumes:
   # temporarily ephemeral
@@ -18,6 +19,7 @@ backup:
   environment:
     BACKUP_PERIOD: 5m
     BACKUP_RETENTION: 1h
+    RANCHER_DEBUG: '${RANCHER_DEBUG}'
   net: container:etcd
   volumes:
   - /var/etcd/backups:/data-backup
