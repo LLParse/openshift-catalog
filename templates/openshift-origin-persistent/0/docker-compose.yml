@@ -5,8 +5,8 @@ etcd:
     io.rancher.scheduler.affinity:container_label_ne: io.rancher.stack_service.name=$${stack_name}/$${service_name}
     io.rancher.sidekicks: backup
   environment:
-    EMBEDDED_BACKUPS: 'false'
     RANCHER_DEBUG: '${RANCHER_DEBUG}'
+    EMBEDDED_BACKUPS: 'false'
   volumes:
   - etcd:/pdata
 
@@ -63,6 +63,7 @@ origin-node:
     io.rancher.scheduler.global: 'true'
   environment:
     RANCHER_DEBUG: '${RANCHER_DEBUG}'
+    KUBECONFIG: /etc/origin/master/admin.kubeconfig
   expose:
   - 10250:10250/tcp
   links:
