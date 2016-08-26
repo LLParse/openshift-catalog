@@ -23,7 +23,20 @@ backup:
   volumes_from:
   - etcd
 
-origin-master:
+openvswitch:
+  image: openshift/openvswitch:v1.2.1
+  privileged: true
+  net: host
+  pid: host
+  labels:
+    io.rancher.scheduler.global: 'true'
+  volumes:
+  - /lib/modules:/lib/modules
+  - /run:/run
+  - /sys:/sys:ro
+  - /etc/origin/openvswitch:/etc/openvswitch
+
+master:
   image: llparse/origin:v1.2.1
   command: bootstrap_master
   labels:
@@ -50,7 +63,7 @@ origin-master:
   - /etc/docker/certs.d:/etc/docker/certs.d
   - /etc/origin/master:/etc/origin/master
 
-origin-node:
+node:
   image: llparse/origin:v1.2.1
   command: bootstrap_node
   labels:
@@ -59,7 +72,7 @@ origin-node:
     io.rancher.container.dns: 'true'
     io.rancher.container.pull_image: always
     io.rancher.container.start_once: 'true'
-    io.rancher.scheduler.affinity:host_label_ne: etcd=true,master=true
+    io.rancher.scheduler.affinity:host_label_ne: nopods=true
     io.rancher.scheduler.global: 'true'
   environment:
     RANCHER_DEBUG: '${RANCHER_DEBUG}'
@@ -67,11 +80,13 @@ origin-node:
   expose:
   - 10250:10250/tcp
   links:
-  - origin-master
+  - master
+  - openvswitch
   net: host
   pid: host
   privileged: true
   volumes:
+  - /var/run/docker.sock:/var/run/docker.sock
   # necessary for configuring secure docker registry
   - /etc/docker/certs.d:/etc/docker/certs.d
   # volumes only seem to work with a host bind-mount
@@ -86,7 +101,7 @@ origin-node:
   - /var/lib/origin:/var/lib/origin
   - /var/log:/var/log
   - /etc/localtime:/etc/localtime:ro
+  # persist config to host
   - /etc/origin/node:/etc/origin/node
-  # TODO (llparse) overlay network
-  #- /etc/origin/openvswitch:/etc/openvswitch
+  - /etc/origin/openvswitch:/etc/openvswitch
   #- /etc/origin/sdn:/etc/openshift-sdn

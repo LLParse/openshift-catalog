@@ -1,5 +1,5 @@
 etcd:
-  image: llparse/etcd:v2.3.7-7
+  image: llparse/etcd:v2.3.7-8
   labels:
     io.rancher.scheduler.affinity:host_label_soft: etcd=true
     io.rancher.scheduler.affinity:host_label_soft_ne: master=true
@@ -10,7 +10,21 @@ etcd:
   volumes:
   - /pdata
 
-origin-master:
+openvswitch:
+  image: openshift/openvswitch:v1.2.1
+  privileged: true
+  net: host
+  pid: host
+  labels:
+    io.rancher.scheduler.global: 'true'
+  volumes:
+  - /lib/modules:/lib/modules
+  - /run:/run
+  - /sys:/sys:ro
+  # TODO (llparse) should be ephemeral
+  - /etc/origin/openvswitch:/etc/openvswitch
+
+master:
   image: llparse/origin:v1.2.1
   command: bootstrap_master
   labels:
@@ -37,7 +51,7 @@ origin-master:
   - /var/run/docker.sock:/var/run/docker.sock
   - /etc/docker/certs.d:/etc/docker/certs.d
 
-origin-node:
+node:
   image: llparse/origin:v1.2.1
   command: bootstrap_node
   labels:
@@ -46,7 +60,7 @@ origin-node:
     io.rancher.container.dns: 'true'
     io.rancher.container.pull_image: always
     io.rancher.container.start_once: 'true'
-    io.rancher.scheduler.affinity:host_label_ne: etcd=true,master=true
+    io.rancher.scheduler.affinity:host_label_ne: nopods=true
     io.rancher.scheduler.global: 'true'
   environment:
     RANCHER_DEBUG: '${RANCHER_DEBUG}'
@@ -54,11 +68,13 @@ origin-node:
   expose:
   - 10250:10250/tcp
   links:
-  - origin-master
+  - master
+  - openvswitch
   net: host
   pid: host
   privileged: true
   volumes:
+  - /var/run/docker.sock:/var/run/docker.sock
   # necessary for configuring secure docker registry
   - /etc/docker/certs.d:/etc/docker/certs.d
   # volumes only seem to work with a host bind-mount
@@ -73,6 +89,6 @@ origin-node:
   - /var/lib/origin:/var/lib/origin
   - /var/log:/var/log
   - /etc/localtime:/etc/localtime:ro
-  # TODO (llparse) overlay network
-  #- /etc/origin/openvswitch:/etc/openvswitch
+  # TODO (llparse) should be ephemeral
+  - /etc/origin/openvswitch:/etc/openvswitch
   #- /etc/origin/sdn:/etc/openshift-sdn
