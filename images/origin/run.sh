@@ -21,10 +21,10 @@ get_host_addr() {
 }
 
 get_master_addr() {
-  addr=$(curl -s ${META_URL}/services/origin-master/containers/0/primary_ip)
+  addr=$(curl -s ${META_URL}/services/master/containers/0/primary_ip)
   while [ "$addr" == "" ]; do
     sleep 1
-    addr=$(curl -s ${META_URL}/services/origin-master/containers/0/primary_ip)
+    addr=$(curl -s ${META_URL}/services/master/containers/0/primary_ip)
   done
   echo $addr
 }
@@ -58,7 +58,7 @@ bootstrap_master() {
 
   # Generate keys and default config
   openshift start master \
-    --cors-allowed-origins=localhost,127.0.0.1,${HOST_IP},${HOST_NAME},origin-master \
+    --cors-allowed-origins=localhost,127.0.0.1,${HOST_IP},${HOST_NAME},master \
     --dns=tcp://0.0.0.0:53 \
     --etcd=http://etcd.rancher.internal:2379 \
     --listen=https://0.0.0.0:8443 \
@@ -67,7 +67,7 @@ bootstrap_master() {
     --public-master=https://${HOST_IP}:8443 \
     --write-config=${MASTER_CONFIG}
 
-  UUID=$(curl -s ${META_URL}/services/origin-master/uuid)
+  UUID=$(curl -s ${META_URL}/services/master/uuid)
   SERVICE_DATA=$(curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY "${CATTLE_URL}/services?uuid=$UUID")
   PROJECT_ID=$(echo $SERVICE_DATA | jq -r '.data[0].accountId')
   SERVICE_ID=$(echo $SERVICE_DATA | jq -r '.data[0].id')
@@ -95,7 +95,7 @@ bootstrap_node() {
   mkdir -p ${MASTER_CONFIG}
 
   while [ ! -f $CA_CERT ]; do
-    UUID=$(curl -s ${META_URL}/services/origin-master/uuid)
+    UUID=$(curl -s ${META_URL}/services/master/uuid)
     SERVICE_DATA=$(curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY "${CATTLE_URL}/services?uuid=${UUID}")
     echo $SERVICE_DATA | jq -r '.data[0].metadata."master.data"' | base64 -d | tar xz
     sleep 1
