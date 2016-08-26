@@ -1,6 +1,8 @@
 #!/bin/bash
 if [ "$RANCHER_DEBUG" == "true" ]; then set -x; fi
 
+META_URL=http://rancher-metadata.rancher.internal/2015-12-19
+
 oc_gate() {
   oc $@ &> /dev/null
   while [ "$?" != "0" ]; do
@@ -9,19 +11,39 @@ oc_gate() {
   done
 }
 
+get_host_addr() {
+  addr=$(curl -s ${META_URL}/self/host/agent_ip)
+  while [ "$addr" == "" ]; do
+    sleep 1
+    addr=$(curl -s ${META_URL}/self/host/agent_ip)
+  done
+  echo $addr
+}
+
+get_master_addr() {
+  addr=$(curl -s ${META_URL}/services/origin-master/containers/0/primary_ip)
+  while [ "$addr" == "" ]; do
+    sleep 1
+    addr=$(curl -s ${META_URL}/services/origin-master/containers/0/primary_ip)
+  done
+  echo $addr
+}
+
+get_registry_addr() {
+  addr=$(oc get svc/docker-registry -o jsonpath='{.spec.clusterIP}')
+  while [ "$?" != "0" ]; do
+    sleep 1
+    addr=$(oc get svc/docker-registry -o jsonpath='{.spec.clusterIP}')
+  done
+  echo $addr
+}
+
 common() {
   CREATE_EXAMPLES=${CREATE_EXAMPLES:-true}
   CREATE_ROUTER=${CREATE_ROUTER:-true}
   CREATE_REGISTRY=${CREATE_REGISTRY:-true}
 
-  META_URL=http://rancher-metadata.rancher.internal/2015-12-19
-  HOST_IP=$(curl -s ${META_URL}/self/host/agent_ip)
-  # sometimes returns empty??
-  while [ "$HOST_IP" == "" ]; do
-    sleep 1
-    HOST_IP=$(curl -s ${META_URL}/self/host/agent_ip)
-  done
-
+  HOST_IP=$(get_host_addr)
   HOST_NAME=$(curl -s ${META_URL}/self/host/hostname)
   MASTER_CONFIG=/etc/origin/master
   CA_CERT=${MASTER_CONFIG}/ca.crt
@@ -41,6 +63,7 @@ bootstrap_master() {
     --etcd=http://etcd.rancher.internal:2379 \
     --listen=https://0.0.0.0:8443 \
     --master=https://${HOST_IP}:8443 \
+    --network-plugin=redhat/openshift-ovs-subnet \
     --public-master=https://${HOST_IP}:8443 \
     --write-config=${MASTER_CONFIG}
 
@@ -48,20 +71,15 @@ bootstrap_master() {
   SERVICE_DATA=$(curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY "${CATTLE_URL}/services?uuid=$UUID")
   PROJECT_ID=$(echo $SERVICE_DATA | jq -r '.data[0].accountId')
   SERVICE_ID=$(echo $SERVICE_DATA | jq -r '.data[0].id')
-  SERVICE_DATA=$(curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY "${CATTLE_URL}/projects/$PROJECT_ID/services/$SERVICE_ID")
-  #SERVICE_DATA=$(echo $SERVICE_DATA | jq -r ".metadata |= .+ {\"ca.crt\":\"$(cat $CA_CERT | base64)\"}")
-  #SERVICE_DATA=$(echo $SERVICE_DATA | jq -r ".metadata |= .+ {\"ca.key\":\"$(cat $CA_KEY | base64)\"}")
-  #SERVICE_DATA=$(echo $SERVICE_DATA | jq -r ".metadata |= .+ {\"ca.serial\":\"$(cat $CA_SERIAL | base64)\"}")
-  #SERVICE_DATA=$(echo $SERVICE_DATA | jq -r ".metadata |= .+ {\"admin.kubeconfig\":\"$(cat $ADMIN_CFG | base64)\"}")
-
-  SERVICE_DATA=$(echo $SERVICE_DATA | jq -r ".metadata |= .+ {\"all.the.data\":\"$(tar czf - master | base64)\"}")
+  SERVICE_DATA=$(curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY "${CATTLE_URL}/projects/${PROJECT_ID}/services/${SERVICE_ID}")
+  SERVICE_DATA=$(echo $SERVICE_DATA | jq -r ".metadata |= .+ {\"master.data\":\"$(tar czf - master | base64)\"}")
 
   curl -s -X PUT \
     -u "${CATTLE_ACCESS_KEY}:${CATTLE_SECRET_KEY}" \
     -H 'Accept: application/json' \
     -H 'Content-Type: application/json' \
     -d "${SERVICE_DATA}" \
-    "${CATTLE_URL}/projects/$PROJECT_ID/services/$SERVICE_ID"
+    "${CATTLE_URL}/projects/$PROJECT_ID/services/${SERVICE_ID}"
 
   configure_master &
 
@@ -74,33 +92,17 @@ bootstrap_master() {
 bootstrap_node() {
   common
 
-  # Sometimes node starts before master metadata is there
-  MASTER_IP=$(curl -s rancher-metadata/latest/services/origin-master/containers/0/primary_ip)
-  while [ "$MASTER_IP" == "" ]; do
+  mkdir -p ${MASTER_CONFIG}
+
+  while [ ! -f $CA_CERT ]; do
+    UUID=$(curl -s ${META_URL}/services/origin-master/uuid)
+    SERVICE_DATA=$(curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY "${CATTLE_URL}/services?uuid=${UUID}")
+    echo $SERVICE_DATA | jq -r '.data[0].metadata."master.data"' | base64 -d | tar xz
     sleep 1
-    MASTER_IP=$(curl -s rancher-metadata/latest/services/origin-master/containers/0/primary_ip)
   done
 
-  mkdir -p ${MASTER_CONFIG}
-  UUID=$(curl -s ${META_URL}/services/origin-master/uuid)
-  SERVICE_DATA=$(curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY "${CATTLE_URL}/services?uuid=$UUID")
-
-  # TODO gate until metadata available
-  if [ ! -f $CA_CERT ]; then
-    #echo $SERVICE_DATA | jq -r '.data[0].metadata."ca.crt"' | base64 -d > $CA_CERT
-    #echo $SERVICE_DATA | jq -r '.data[0].metadata."ca.key"' | base64 -d > $CA_KEY
-    #echo $SERVICE_DATA | jq -r '.data[0].metadata."ca.serial"' | base64 -d > $CA_SERIAL
-    #echo $SERVICE_DATA | jq -r '.data[0].metadata."admin.kubeconfig"' | base64 -d > $ADMIN_CFG
-    echo $SERVICE_DATA | jq -r '.data[0].metadata."all.the.data"' | base64 -d | tar xz
-
-    # FIXME maybe we need more config?
-  fi
-
-  if [ "$CREATE_REGISTRY" == "true" ]; then
-    configure_docker
-  fi
-
   # Generate keys and default config
+  MASTER_IP=$(get_master_addr)
   oadm create-node-config \
     --dns-ip=${MASTER_IP} \
     --node-client-certificate-authority=${CA_CERT} \
@@ -112,7 +114,11 @@ bootstrap_node() {
     --node=${HOST_NAME} \
     --hostnames=${HOST_IP},${HOST_NAME} \
     --master=https://${MASTER_IP}:8443 \
+    --volume-dir=/openshift.local.volumes \
+    --network-plugin=redhat/openshift-ovs-subnet \
     --config=/etc/origin/node
+
+  configure_node
 
   openshift start node \
     --config=/etc/origin/node/node-config.yaml \
@@ -133,6 +139,18 @@ configure_master() {
   if [ "$CREATE_REGISTRY" == "true" ]; then
     create_registry
     configure_docker
+  fi
+}
+
+configure_node() {
+  # wait for server to open socket
+  giddyup probe tcp://${MASTER_IP}:8443 --loop --min 1s --max 16s --backoff 2
+
+  # must exist before registering nodes
+  oc_gate get clusternetworks/default
+
+  if [ "$CREATE_REGISTRY" == "true" ]; then
+    configure_docker &
   fi
 }
 
@@ -208,15 +226,6 @@ create_registry() {
     "name":"registry",
     "readinessProbe":  {"httpGet": {"scheme":"HTTPS"}}
   }]}}}}'
-}
-
-get_registry_addr() {
-  addr=$(oc get svc/docker-registry -o jsonpath='{.spec.clusterIP}')
-  while [ "$?" != "0" ]; do
-    sleep 1
-    addr=$(oc get svc/docker-registry -o jsonpath='{.spec.clusterIP}')
-  done
-  echo $addr
 }
 
 configure_docker() {
