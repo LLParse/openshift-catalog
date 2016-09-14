@@ -2,7 +2,7 @@
 
 ACCT=${ACCT:-llparse}
 VERSION=${VERSION:-v1.2.1}
-IMAGE=${IMAGE:-origin}
+IMAGE=${IMAGE:-origin-master}
 
 docker build -t $ACCT/$IMAGE:$VERSION .
 docker push $ACCT/$IMAGE:$VERSION

@@ -1,5 +1,5 @@
 etcd:
-  image: llparse/etcd:v2.3.7-7
+  image: llparse/etcd:v2.3.7-9
   labels:
     io.rancher.scheduler.affinity:host_label: etcd=true
     io.rancher.scheduler.affinity:container_label_ne: io.rancher.stack_service.name=$${stack_name}/$${service_name}
@@ -11,7 +11,7 @@ etcd:
   - etcd:/pdata
 
 backup:
-  image: llparse/etcd:v2.3.7-7
+  image: llparse/etcd:v2.3.7-9
   command: rolling_backup
   environment:
     BACKUP_PERIOD: 15m
@@ -23,21 +23,8 @@ backup:
   volumes_from:
   - etcd
 
-openvswitch:
-  image: openshift/openvswitch:v1.2.1
-  privileged: true
-  net: host
-  pid: host
-  labels:
-    io.rancher.scheduler.global: 'true'
-  volumes:
-  - /lib/modules:/lib/modules
-  - /run:/run
-  - /sys:/sys:ro
-  - /etc/origin/openvswitch:/etc/openvswitch
-
 master:
-  image: llparse/origin:v1.2.1
+  image: llparse/origin-master:v1.2.1
   command: bootstrap_master
   labels:
     io.rancher.container.agent.role: environment
@@ -64,7 +51,7 @@ master:
   - /etc/origin/master:/etc/origin/master
 
 node:
-  image: llparse/origin:v1.2.1
+  image: llparse/origin-node:v1.2.1
   command: bootstrap_node
   labels:
     io.rancher.container.agent.role: environment
@@ -81,7 +68,6 @@ node:
   - 10250:10250/tcp
   links:
   - master
-  - openvswitch
   net: host
   pid: host
   privileged: true
@@ -103,5 +89,3 @@ node:
   - /etc/localtime:/etc/localtime:ro
   # persist config to host
   - /etc/origin/node:/etc/origin/node
-  - /etc/origin/openvswitch:/etc/openvswitch
-  #- /etc/origin/sdn:/etc/openshift-sdn
