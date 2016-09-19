@@ -62,7 +62,6 @@ bootstrap_master() {
     --dns=tcp://0.0.0.0:53 \
     --listen=https://0.0.0.0:8443 \
     --master=https://${HOST_IP}:8443 \
-    --network-plugin=redhat/openshift-ovs-subnet \
     --public-master=https://${HOST_IP}:8443 \
     --write-config=${MASTER_CONFIG}
 

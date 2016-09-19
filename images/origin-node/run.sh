@@ -79,7 +79,6 @@ bootstrap_node() {
     --hostnames=${HOST_IP},${HOST_NAME} \
     --master=https://${MASTER_IP}:8443 \
     --volume-dir=/openshift.local.volumes \
-    --network-plugin=redhat/openshift-ovs-subnet \
     --config=/etc/origin/node
 
   configure_node
@@ -92,9 +91,6 @@ bootstrap_node() {
 configure_node() {
   # wait for server to open socket
   giddyup probe tcp://${MASTER_IP}:8443 --loop --min 1s --max 16s --backoff 2
-
-  # must exist before registering nodes
-  oc_gate get clusternetworks/default
 
   if [ "$CREATE_REGISTRY" == "true" ]; then
     configure_docker &
