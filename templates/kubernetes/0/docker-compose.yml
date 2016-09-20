@@ -108,6 +108,7 @@ origin-installer:
     labels:
         io.rancher.container.start_once: "true"
         io.rancher.k8s.kubectld: "true"
+        io.rancher.container.pull_image: always
     image: llparse/origin-under-k8s:v1.3.0
     entrypoint: /bin/sleep
     command: "600000"
