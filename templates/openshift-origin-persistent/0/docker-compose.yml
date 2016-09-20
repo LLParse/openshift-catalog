@@ -35,7 +35,7 @@ master:
     io.rancher.scheduler.affinity:host_label: master=true
   environment:
     RANCHER_DEBUG: '${RANCHER_DEBUG}'
-    KUBECONFIG: /etc/origin/master/admin.kubeconfig
+    KUBECONFIG: /root/.kube/config
     CREATE_EXAMPLES: '${CREATE_EXAMPLES}'
     CREATE_ROUTER: '${CREATE_ROUTER}'
     CREATE_REGISTRY: '${CREATE_REGISTRY}'
@@ -48,7 +48,7 @@ master:
   volumes:
   - /var/run/docker.sock:/var/run/docker.sock
   - /etc/docker/certs.d:/etc/docker/certs.d
-  - /etc/origin/master:/etc/origin/master
+  - /etc/origin/master
 
 node:
   image: llparse/origin-node:v1.2.1

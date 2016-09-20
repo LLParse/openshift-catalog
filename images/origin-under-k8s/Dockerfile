@@ -10,5 +10,6 @@ RUN \
   rm -rf /openshift-under-kubernetes && \
   echo 4
 
+ADD config /root/.kube/config
 ADD run.sh /
 ENTRYPOINT ["/run.sh"]

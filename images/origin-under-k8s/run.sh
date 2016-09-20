@@ -15,4 +15,5 @@ if [ -n "$ACTION" ]; then
   unzip -o certs.zip
 fi
 
+# openshift-under-kubernetes deploy --no-load-balancer --server-key /etc/kubernetes/ssl/key.pem
 sleep 6000000
