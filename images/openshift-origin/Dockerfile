@@ -1,16 +1,11 @@
-FROM centos:centos7
+FROM openshift/origin:v1.2.1
 
-RUN yum install -y PyYAML
-RUN yum install -y iproute openssh-server
+RUN \
+  curl -L https://github.com/cloudnautique/giddyup/releases/download/v0.14.0/giddyup -o /usr/bin/giddyup && \
+  chmod +x /usr/bin/giddyup && \
+  yum install -y jq unzip python-pip && \
+  pip install PyYAML
 
-# TODO: docker via systemd, methinks... (or let openshift docker-in-docker us for now)
-#RUN \
-#  yum install -y iproute openssh-server && \
-#  curl -L https://get.docker.com/builds/Linux/x86_64/docker-1.10.3 -o /usr/bin/docker && \
-#  chmod +x /usr/bin/docker
-
-# net-tools?
-
-ADD auth-agent /usr/bin/
-ADD systemd/system-unit/* /usr/lib/systemd/system/
-ADD systemd/system-preset/* /usr/lib/systemd/system-preset/
+WORKDIR /etc/origin
+ADD run.sh configure.py examples_v1.2.tgz kubeconfig users.htpasswd /
+ENTRYPOINT ["/run.sh"]

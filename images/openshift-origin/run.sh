@@ -20,15 +20,6 @@ get_host_addr() {
   echo $addr
 }
 
-get_master_addr() {
-  addr=$(curl -s ${META_URL}/services/master/containers/0/primary_ip)
-  while [ "$addr" == "" ]; do
-    sleep 1
-    addr=$(curl -s ${META_URL}/services/master/containers/0/primary_ip)
-  done
-  echo $addr
-}
-
 get_registry_addr() {
   addr=$(oc get svc/docker-registry -o jsonpath='{.spec.clusterIP}')
   while [ "$?" != "0" ]; do
@@ -69,6 +60,9 @@ bootstrap_master() {
       cd /etc/kubernetes/ssl
       curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY -X POST $ACTION > certs.zip
       unzip -o certs.zip
+      if [ "$?" != "0" ]; then
+        exit 1
+      fi
     fi
 
     # Generate keys and default config
@@ -76,24 +70,22 @@ bootstrap_master() {
       --certificate-authority=/etc/kubernetes/ssl/ca.pem \
       --cors-allowed-origins=localhost,127.0.0.1,${HOST_IP},${HOST_NAME},master \
       --dns=tcp://0.0.0.0:53 \
-      --etcd=http://etcd.kubernetes.rancher.internal:2379 \
-      --kubeconfig=/root/.kube/config \
+      --etcd=http://etcd:2379 \
+      --kubeconfig=/kubeconfig \
       --listen=https://0.0.0.0:8443 \
       --master=https://${HOST_IP}:8443 \
       --public-master=https://${HOST_IP}:8443 \
       --write-config=${MASTER_CONFIG}
 
-    sed -ri "s/(kubernetesStoragePrefix: ).*/\1registry/g" ${MASTER_CONFIG}/master-config.yaml
+    python /configure.py
 
-    #/etc/kubernetes/ssl/cert.pem
-    #/etc/kubernetes/ssl/key.pem
-
-    UUID=$(curl -s ${META_URL}/services/master/uuid)
+    # FIXME
+    UUID=$(curl -s ${META_URL}/services/openshift/uuid)
     SERVICE_DATA=$(curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY "${CATTLE_URL}/services?uuid=$UUID")
     PROJECT_ID=$(echo $SERVICE_DATA | jq -r '.data[0].accountId')
     SERVICE_ID=$(echo $SERVICE_DATA | jq -r '.data[0].id')
     SERVICE_DATA=$(curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY "${CATTLE_URL}/projects/${PROJECT_ID}/services/${SERVICE_ID}")
-    SERVICE_DATA=$(echo $SERVICE_DATA | jq -r ".metadata |= .+ {\"master.data\":\"$(tar czf - master | base64)\"}")
+    SERVICE_DATA=$(echo $SERVICE_DATA | jq -r ".metadata |= .+ {\"master.data\":\"$(tar czf - $MASTER_CONFIG | base64)\"}")
 
     curl -s -X PUT \
       -u "${CATTLE_ACCESS_KEY}:${CATTLE_SECRET_KEY}" \
@@ -111,44 +103,9 @@ bootstrap_master() {
     --loglevel=2
 }
 
-bootstrap_node() {
-  common
-
-  mkdir -p ${MASTER_CONFIG}
-
-  while [ ! -f $CA_CERT ]; do
-    UUID=$(curl -s ${META_URL}/services/master/uuid)
-    SERVICE_DATA=$(curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY "${CATTLE_URL}/services?uuid=${UUID}")
-    echo $SERVICE_DATA | jq -r '.data[0].metadata."master.data"' | base64 -d | tar xz
-    sleep 1
-  done
-
-  # Generate keys and default config
-  MASTER_IP=$(get_master_addr)
-  oadm create-node-config \
-    --dns-ip=${MASTER_IP} \
-    --node-client-certificate-authority=${CA_CERT} \
-    --certificate-authority=${CA_CERT} \
-    --signer-cert=${CA_CERT} \
-    --signer-key=${CA_KEY} \
-    --signer-serial=${CA_SERIAL} \
-    --node-dir=/etc/origin/node \
-    --node=${HOST_NAME} \
-    --hostnames=${HOST_IP},${HOST_NAME} \
-    --master=https://${MASTER_IP}:8443 \
-    --volume-dir=/openshift.local.volumes \
-    --config=/etc/origin/node
-
-  configure_node
-
-  openshift start node \
-    --config=/etc/origin/node/node-config.yaml \
-    --loglevel=2
-}
-
 configure_master() {
   # wait for server to open socket
-  giddyup probe tcp://${HOST_IP}:8443 --loop --min 1s --max 16s --backoff 2
+  giddyup probe tcp://127.0.0.1:8443 --loop --min 1s --max 16s --backoff 2
 
   configure_admin
   if [ "$CREATE_EXAMPLES" == "true" ]; then
@@ -159,19 +116,6 @@ configure_master() {
   fi
   if [ "$CREATE_REGISTRY" == "true" ]; then
     create_registry
-    configure_docker
-  fi
-}
-
-configure_node() {
-  # wait for server to open socket
-  giddyup probe tcp://${MASTER_IP}:8443 --loop --min 1s --max 16s --backoff 2
-
-  # must exist before registering nodes
-  # oc_gate get clusternetworks/default
-
-  if [ "$CREATE_REGISTRY" == "true" ]; then
-    configure_docker &
   fi
 }
 
@@ -250,6 +194,20 @@ create_registry() {
 }
 
 configure_docker() {
+  common
+
+  if [ "$CREATE_REGISTRY" != "true" ]; then
+    exit 0
+  fi
+
+  cd /
+  while [ ! -f $CA_CERT ]; do
+    UUID=$(curl -s ${META_URL}/services/openshift/uuid)
+    SERVICE_DATA=$(curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY "${CATTLE_URL}/services?uuid=${UUID}")
+    echo $SERVICE_DATA | jq -r '.data[0].metadata."master.data"' | base64 -d | tar xz
+    sleep 1
+  done
+
   destdir_addr=${DOCKER_CERTS}/$(get_registry_addr):5000
   destdir_name=${DOCKER_CERTS}/docker-registry.default.svc.cluster.local:5000
 

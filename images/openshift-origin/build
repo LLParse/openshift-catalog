@@ -1,15 +1,8 @@
 #!/bin/bash -e
 
 ACCT=${ACCT:-llparse}
-VERSION=${VERSION:-v0.0.1}
+VERSION=${VERSION:-v1.2.1}
 IMAGE=${IMAGE:-openshift-origin}
-
-docker build -t auth-agent -f Dockerfile.auth-agent .
-id=$(docker run -d --entrypoint=/bin/sh --name auth-agent auth-agent sleep 15)
-docker cp auth-agent:/go/src/auth-agent/auth-agent .
-docker rm -f $id
 
 docker build -t $ACCT/$IMAGE:$VERSION .
 docker push $ACCT/$IMAGE:$VERSION
-
-rm auth-agent

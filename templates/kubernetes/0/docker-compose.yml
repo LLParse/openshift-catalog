@@ -93,15 +93,14 @@ kubectld:
         - kubernetes:master
 
 openshift:
-  image: llparse/origin:v1.2.1
+  image: llparse/openshift-origin:v1.2.1
   command: bootstrap_master
   labels:
     io.rancher.container.agent.role: environmentAdmin
     io.rancher.container.create_agent: 'true'
     io.rancher.container.dns: 'true'
     io.rancher.container.pull_image: always
-    io.rancher.scheduler.affinity:host_label_ne: etcd=true
-    io.rancher.scheduler.affinity:host_label_soft: master=true
+    io.rancher.scheduler.affinity:host_label_ne: nopods=true
   environment:
     KUBECONFIG: /etc/origin/master/openshift-master.kubeconfig
     RANCHER_DEBUG: "true"
@@ -118,6 +117,22 @@ openshift:
   volumes:
   - /var/run/docker.sock:/var/run/docker.sock
   - /etc/docker/certs.d:/etc/docker/certs.d
+
+docker-config:
+  image: llparse/openshift-origin:v1.2.1
+  command: configure_docker
+  labels:
+    io.rancher.container.agent.role: environmentAdmin
+    io.rancher.container.create_agent: 'true'
+    io.rancher.container.start_once: 'true'
+    io.rancher.scheduler.global: "true"
+    io.rancher.scheduler.affinity:host_label_ne: nopods=true
+  links:
+  - openshift
+  environment:
+    KUBECONFIG: /etc/origin/master/openshift-master.kubeconfig
+    RANCHER_DEBUG: "true"
+    CREATE_REGISTRY: "true"
 
 scheduler:
     command:

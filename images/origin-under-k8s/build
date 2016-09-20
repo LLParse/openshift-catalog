@@ -1,8 +1,0 @@
-#!/bin/bash -e
-
-ACCT=${ACCT:-llparse}
-VERSION=${VERSION:-v1.3.0}
-IMAGE=${IMAGE:-origin-under-k8s}
-
-docker build -t $ACCT/$IMAGE:$VERSION .
-docker push $ACCT/$IMAGE:$VERSION
