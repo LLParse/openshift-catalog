@@ -3,10 +3,17 @@ kind: Config
 clusters:
 - cluster:
     api-version: v1
-    server: "http://kubernetes"
+    certificate-authority: /etc/kubernetes/ssl/ca.pem
+    server: "https://kubernetes:6443"
   name: "Default"
 contexts:
 - context:
     cluster: "Default"
+    user: "Default"
   name: "Default"
 current-context: "Default"
+users:
+- name: "Default"
+  user:
+    client-certificate: /etc/kubernetes/ssl/cert.pem
+    client-key: /etc/kubernetes/ssl/key.pem

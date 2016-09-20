@@ -96,15 +96,15 @@ openshift:
   image: llparse/origin:v1.2.1
   command: bootstrap_master
   labels:
-    io.rancher.container.agent.role: environment
+    io.rancher.container.agent.role: environmentAdmin
     io.rancher.container.create_agent: 'true'
     io.rancher.container.dns: 'true'
     io.rancher.container.pull_image: always
     io.rancher.scheduler.affinity:host_label_ne: etcd=true
     io.rancher.scheduler.affinity:host_label_soft: master=true
   environment:
-    RANCHER_DEBUG: "true"
     KUBECONFIG: /etc/origin/master/openshift-master.kubeconfig
+    RANCHER_DEBUG: "true"
     CREATE_EXAMPLES: "true"
     CREATE_ROUTER: "true"
     CREATE_REGISTRY: "true"

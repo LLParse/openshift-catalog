@@ -55,34 +55,55 @@ common() {
 bootstrap_master() {
   common
 
-  # Generate keys and default config
-  openshift start master \
-    --cors-allowed-origins=localhost,127.0.0.1,${HOST_IP},${HOST_NAME},master \
-    --dns=tcp://0.0.0.0:53 \
-    --etcd=http://etcd.kubernetes.rancher.internal:2379 \
-    --kubeconfig=/root/.kube/config \
-    --listen=https://0.0.0.0:8443 \
-    --master=https://${HOST_IP}:8443 \
-    --public-master=https://${HOST_IP}:8443 \
-    --write-config=${MASTER_CONFIG}
+  if [ ! -f ${MASTER_CONFIG}/master-config.yaml ]; then
+    while ! curl -s -f http://rancher-metadata/2015-12-19/stacks/Kubernetes/services/kubernetes/uuid; do
+        echo Waiting for metadata
+        sleep 1
+    done
 
-  sed -ri "s/(kubernetesStoragePrefix: ).*/\1registry/g" ${MASTER_CONFIG}/master-config.yaml
+    UUID=$(curl -s ${META_URL}/stacks/Kubernetes/services/kubernetes/uuid)
+    ACTION=$(curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY "$CATTLE_URL/services?uuid=$UUID" | jq -r '.data[0].actions.certificate')
 
-  UUID=$(curl -s ${META_URL}/services/master/uuid)
-  SERVICE_DATA=$(curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY "${CATTLE_URL}/services?uuid=$UUID")
-  PROJECT_ID=$(echo $SERVICE_DATA | jq -r '.data[0].accountId')
-  SERVICE_ID=$(echo $SERVICE_DATA | jq -r '.data[0].id')
-  SERVICE_DATA=$(curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY "${CATTLE_URL}/projects/${PROJECT_ID}/services/${SERVICE_ID}")
-  SERVICE_DATA=$(echo $SERVICE_DATA | jq -r ".metadata |= .+ {\"master.data\":\"$(tar czf - master | base64)\"}")
+    if [ -n "$ACTION" ]; then
+      mkdir -p /etc/kubernetes/ssl
+      cd /etc/kubernetes/ssl
+      curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY -X POST $ACTION > certs.zip
+      unzip -o certs.zip
+    fi
 
-  curl -s -X PUT \
-    -u "${CATTLE_ACCESS_KEY}:${CATTLE_SECRET_KEY}" \
-    -H 'Accept: application/json' \
-    -H 'Content-Type: application/json' \
-    -d "${SERVICE_DATA}" \
-    "${CATTLE_URL}/projects/$PROJECT_ID/services/${SERVICE_ID}"
+    # Generate keys and default config
+    openshift start master \
+      --certificate-authority=/etc/kubernetes/ssl/ca.pem \
+      --cors-allowed-origins=localhost,127.0.0.1,${HOST_IP},${HOST_NAME},master \
+      --dns=tcp://0.0.0.0:53 \
+      --etcd=http://etcd.kubernetes.rancher.internal:2379 \
+      --kubeconfig=/root/.kube/config \
+      --listen=https://0.0.0.0:8443 \
+      --master=https://${HOST_IP}:8443 \
+      --public-master=https://${HOST_IP}:8443 \
+      --write-config=${MASTER_CONFIG}
 
-  configure_master &
+    sed -ri "s/(kubernetesStoragePrefix: ).*/\1registry/g" ${MASTER_CONFIG}/master-config.yaml
+
+    #/etc/kubernetes/ssl/cert.pem
+    #/etc/kubernetes/ssl/key.pem
+
+    UUID=$(curl -s ${META_URL}/services/master/uuid)
+    SERVICE_DATA=$(curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY "${CATTLE_URL}/services?uuid=$UUID")
+    PROJECT_ID=$(echo $SERVICE_DATA | jq -r '.data[0].accountId')
+    SERVICE_ID=$(echo $SERVICE_DATA | jq -r '.data[0].id')
+    SERVICE_DATA=$(curl -s -u $CATTLE_ACCESS_KEY:$CATTLE_SECRET_KEY "${CATTLE_URL}/projects/${PROJECT_ID}/services/${SERVICE_ID}")
+    SERVICE_DATA=$(echo $SERVICE_DATA | jq -r ".metadata |= .+ {\"master.data\":\"$(tar czf - master | base64)\"}")
+
+    curl -s -X PUT \
+      -u "${CATTLE_ACCESS_KEY}:${CATTLE_SECRET_KEY}" \
+      -H 'Accept: application/json' \
+      -H 'Content-Type: application/json' \
+      -d "${SERVICE_DATA}" \
+      "${CATTLE_URL}/projects/$PROJECT_ID/services/${SERVICE_ID}"
+
+    configure_master &
+  fi
 
   # Run master
   openshift start master \
