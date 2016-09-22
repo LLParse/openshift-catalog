@@ -15,11 +15,15 @@ config['etcdStorageConfig'] = {
 }
 
 # k8s service account authentication
-config['serviceAccountConfig'] = {
-  "managedNames": ["builder", "deployer"],
-  "masterCA": "/etc/kubernetes/ssl/ca.pem",
-  "privateKeyFile": "/etc/kubernetes/ssl/key.pem",
-  "publicKeyFiles": ["/etc/kubernetes/ssl/cert.pem"]
+config['serviceAccountConfig']['privateKeyFile'] = "/etc/kubernetes/ssl/key.pem"
+config['serviceAccountConfig']['publicKeyFiles'] = ["/etc/kubernetes/ssl/cert.pem"]
+
+# configure kubelet access to allow tailing sti-build log files
+config['kubeletClientInfo'] = {
+  "ca": "/etc/kubernetes/ssl/ca.pem",
+  "certFile": "/etc/kubernetes/ssl/cert.pem",
+  "keyFile": "/etc/kubernetes/ssl/key.pem",
+  "port": 10250
 }
 
 # user authentication

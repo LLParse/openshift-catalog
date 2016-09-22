@@ -67,9 +67,7 @@ bootstrap_master() {
 
     # Generate keys and default config
     openshift start master \
-      --certificate-authority=/etc/kubernetes/ssl/ca.pem \
       --cors-allowed-origins=localhost,127.0.0.1,${HOST_IP},${HOST_NAME},master \
-      --dns=tcp://0.0.0.0:53 \
       --etcd=http://etcd:2379 \
       --kubeconfig=/kubeconfig \
       --listen=https://0.0.0.0:8443 \
@@ -77,9 +75,12 @@ bootstrap_master() {
       --public-master=https://${HOST_IP}:8443 \
       --write-config=${MASTER_CONFIG}
 
+    #--dns=tcp://0.0.0.0:53 \
+    #--certificate-authority=/etc/kubernetes/ssl/ca.pem \
+
     # to make serviceaccounts work, overwrite with k8s master priv/pub key 
-    cp -f /etc/kubernetes/ssl/key.pem ${MASTER_CONFIG}/serviceaccounts.private.key
-    cp -f /etc/kubernetes/ssl/cert.pem ${MASTER_CONFIG}/serviceaccounts.public.key
+    #cp -f /etc/kubernetes/ssl/key.pem ${MASTER_CONFIG}/serviceaccounts.private.key
+    #cp -f /etc/kubernetes/ssl/cert.pem ${MASTER_CONFIG}/serviceaccounts.public.key
 
     python /configure.py
 
