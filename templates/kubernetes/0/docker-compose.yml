@@ -101,6 +101,7 @@ openshift:
     io.rancher.container.dns: 'true'
     io.rancher.container.pull_image: always
     io.rancher.scheduler.affinity:host_label_ne: nopods=true
+    io.rancher.scheduler.affinity:host_label_soft: openshift=true
   environment:
     KUBECONFIG: /etc/origin/master/openshift-master.kubeconfig
     RANCHER_DEBUG: "true"
