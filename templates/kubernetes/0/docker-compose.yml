@@ -117,7 +117,6 @@ openshift:
   privileged: true
   volumes:
   - /var/run/docker.sock:/var/run/docker.sock
-  - /etc/docker/certs.d:/etc/docker/certs.d
 
 docker-config:
   image: llparse/openshift-origin:v1.2.1
@@ -134,6 +133,8 @@ docker-config:
     KUBECONFIG: /etc/origin/master/openshift-master.kubeconfig
     RANCHER_DEBUG: "true"
     CREATE_REGISTRY: "true"
+  volumes:
+  - /etc/docker/certs.d:/etc/docker/certs.d
 
 scheduler:
     command:

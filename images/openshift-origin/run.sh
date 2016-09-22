@@ -77,6 +77,10 @@ bootstrap_master() {
       --public-master=https://${HOST_IP}:8443 \
       --write-config=${MASTER_CONFIG}
 
+    # to make serviceaccounts work, overwrite with k8s master priv/pub key 
+    cp -f /etc/kubernetes/ssl/key.pem ${MASTER_CONFIG}/serviceaccounts.private.key
+    cp -f /etc/kubernetes/ssl/cert.pem ${MASTER_CONFIG}/serviceaccounts.public.key
+
     python /configure.py
 
     # FIXME
