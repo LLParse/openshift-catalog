@@ -103,7 +103,7 @@ openshift:
     io.rancher.scheduler.affinity:host_label_ne: nopods=true
     io.rancher.scheduler.affinity:host_label_soft: openshift=true
   environment:
-    KUBECONFIG: /etc/origin/master/openshift-master.kubeconfig
+    KUBECONFIG: /etc/origin/master/admin.kubeconfig
     RANCHER_DEBUG: "true"
     CREATE_EXAMPLES: "true"
     CREATE_ROUTER: "true"
@@ -130,7 +130,7 @@ docker-config:
   links:
   - openshift
   environment:
-    KUBECONFIG: /etc/origin/master/openshift-master.kubeconfig
+    KUBECONFIG: /etc/origin/master/admin.kubeconfig
     RANCHER_DEBUG: "true"
     CREATE_REGISTRY: "true"
   volumes:
